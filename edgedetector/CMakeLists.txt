@@ -22,20 +22,26 @@ if(USE_GFLAGS)
   add_definitions(-DUSE_GFLAGS)
 endif()
 
-include_directories($ENV{CUDNN_PATH} $ENV{CUDNN_PATH}/include)
-link_directories($ENV{CUDNN_PATH} $ENV{CUDNN_PATH}/lib $ENV{CUDNN_PATH}/lib64)
+include_directories($ENV{CUDNN_PATH} $ENV{CUDNN_PATH}/include /ibm/gpfs-dataT/dri/install/include/)
+link_directories($ENV{CUDNN_PATH} $ENV{CUDNN_PATH}/lib $ENV{CUDNN_PATH}/lib64 /ibm/gpfs-dataT/dri/install/lib)
 
 find_package( OpenCV REQUIRED )
-include_directories( ${OpenCV_INCLUDE_DIRS} )
-target_link_libraries(edgedetector ${OpenCV_LIBS} )
+#find_package( HDF5 10.3.1 REQUIRED )
+
+#string(REPLACE ":" ";" LIBRARY_DIRS $ENV{LD_LIBRARY_PATH})
+#find_library (hdf5_10_3_1_LIBRARY libhdf5.so.10.3.1 PATHS ${LIBRARY_DIRS})
+
 
 cuda_add_executable(edgedetector edgedetector.cu)
 cuda_add_cublas_to_target(edgedetector)
 
+include_directories( ${OpenCV_INCLUDE_DIRS} )
+target_link_libraries(edgedetector ${OpenCV_LIBS} )
+
 if(USE_GFLAGS)
-  target_link_libraries(edgedetector gflags cudnn)
+  target_link_libraries(edgedetector gflags cudnn opencv_imgcodecs opencv_imgproc opencv_core hdf5 tiff)
 else()
-  target_link_libraries(edgedetector cudnn)
+  target_link_libraries(edgedetector cudnn opencv_imgcodecs opencv_imgproc opencv_core hdf5 tiff)
 endif()
 
 

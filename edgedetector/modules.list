@@ -1,0 +1,4 @@
+#!/bin/bash
+
+module purge
+module load mpi/openmpi-3.1.2-at10.0 deeplearning/opencv-3.4.1_openmpi-at10.0 nvidia/cuda-9.2-rhel7 nvidia/cudnn-7.2.1-rhel7 nvidia/nccl-2.2.13-rhel7
