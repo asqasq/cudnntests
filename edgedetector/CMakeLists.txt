@@ -22,8 +22,9 @@ if(USE_GFLAGS)
   add_definitions(-DUSE_GFLAGS)
 endif()
 
-include_directories($ENV{CUDNN_PATH} $ENV{CUDNN_PATH}/include /ibm/gpfs-dataT/dri/install/include/)
-link_directories($ENV{CUDNN_PATH} $ENV{CUDNN_PATH}/lib $ENV{CUDNN_PATH}/lib64 /ibm/gpfs-dataT/dri/install/lib)
+
+include_directories(~/abaglada/nvidia/cuda/include/)
+link_directories(~/abaglada/nvidia/cuda/lib64)
 
 find_package( OpenCV REQUIRED )
 #find_package( HDF5 10.3.1 REQUIRED )
@@ -38,10 +39,18 @@ cuda_add_cublas_to_target(edgedetector)
 include_directories( ${OpenCV_INCLUDE_DIRS} )
 target_link_libraries(edgedetector ${OpenCV_LIBS} )
 
+
+
 if(USE_GFLAGS)
-  target_link_libraries(edgedetector gflags cudnn opencv_imgcodecs opencv_imgproc opencv_core hdf5 tiff)
+    target_link_libraries(edgedetector gflags cudnn opencv_imgproc opencv_core hdf5 tiff)
 else()
-  target_link_libraries(edgedetector cudnn opencv_imgcodecs opencv_imgproc opencv_core hdf5 tiff)
+  target_link_libraries(edgedetector cudnn opencv_imgproc opencv_core hdf5 tiff)
 endif()
 
+message("VERSION isch ${OpenCV_VERSION_MAJOR}")
+
+if(${OpenCV_VERSION_MAJOR} EQUAL "3")
+  message("Adding opencv_imgproc for OpenCV version 3")
+  target_link_libraries(edgedetector opencv_imgproc)
+endif()
 
