@@ -134,8 +134,8 @@ void test_read_mnist()
      struct mnist_img_desc testdesc;
      
      //train
-     int res = read_train_mnist("/home/asq/data/mnist/train-images-idx3-ubyte",
-                                "/home/asq/data/mnist/train-labels-idx1-ubyte",
+     int res = read_train_mnist("~/data/mnist/train-images-idx3-ubyte",
+                                "~/data/mnist/train-labels-idx1-ubyte",
                                 &traindesc);
      if (res != 0) {
         printf("Error %d\n", res);
@@ -150,8 +150,8 @@ void test_read_mnist()
      }
      
      //test
-     res = read_train_mnist("/home/asq/data/mnist/t10k-images-idx3-ubyte",
-                                "/home/asq/data/mnist/t10k-labels-idx1-ubyte",
+     res = read_train_mnist("~/data/mnist/t10k-images-idx3-ubyte",
+                                "~/data/mnist/t10k-labels-idx1-ubyte",
                                 &testdesc);
      if (res != 0) {
         printf("Error %d\n", res);
@@ -166,10 +166,4 @@ void test_read_mnist()
      }
 }
 
-
-int main(int argc, char **argv)
-{
-    test_read_mnist();
-    return 0;
-}
 
