@@ -60,6 +60,12 @@ int read_train_mnist(char *trainingdata, char *traininglabels, struct mnist_img_
     desc->rows = nr_rows;
     desc->nr_images = nr_images;
 
+    //normalize 0..255 to 0.0..1.0
+    desc->databufferf = (float*)malloc(datasize * sizeof(float));
+    for (int i = 0; i < datasize; i++) {
+        desc->databufferf[i] = ((float)(desc->databuffer[i]))/255.0f;
+    }
+
 
 
 /******************************************************************************/    
@@ -97,6 +103,15 @@ int read_train_mnist(char *trainingdata, char *traininglabels, struct mnist_img_
     }
     memcpy(desc->labelbuffer, buffer + dataoffset, datasize);
 
+    //normalize 0..9 to vector<10> with nine 0.0 and one 1.0 entries
+    desc->labelbufferf = (float*)malloc(datasize * sizeof(float) * 10); //10 labels
+    memset(desc->labelbufferf, 0, datasize * sizeof(float) * 10);
+
+    for (int i = 0; i < datasize; i++) {
+        desc->labelbufferf[i * 10 + desc->labelbuffer[i]] = 1.0f;
+    }
+
+
     free(buffer);
     return 0;
 }
@@ -111,6 +126,12 @@ void free_mnist_desc(struct mnist_img_desc *desc)
     if (desc->labelbuffer) {
         free(desc->labelbuffer);
     }
+    if (desc->databufferf) {
+        free(desc->databufferf);
+    }
+    if (desc->labelbufferf) {
+        free(desc->labelbufferf);
+    }
 }
 
 void dump_image(struct mnist_img_desc *desc, int idx)
@@ -121,9 +142,17 @@ void dump_image(struct mnist_img_desc *desc, int idx)
         for (int j = 0; j < desc->columns; j++) {
             printf("%02x ", desc->databuffer[imgoffset + i * desc->columns + j]);
         }
+        printf("\t");
+        for (int j = 0; j < desc->columns; j++) {
+            printf("%.2f ", desc->databufferf[imgoffset + i * desc->columns + j]);
+        }
         printf("\n");
     }
     printf("\n*****\n  %d  \n*****\n", desc->labelbuffer[idx]);
+    for (int j = 0; j < 10; j++) {
+        printf("%.2f ", desc->labelbufferf[idx * 10 + j]);
+    }
+    printf("\n");
 }
 
 
@@ -165,5 +194,4 @@ void test_read_mnist()
         }
      }
 }
-
 
