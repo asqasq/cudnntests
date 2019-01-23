@@ -22,8 +22,10 @@ if(USE_GFLAGS)
   add_definitions(-DUSE_GFLAGS)
 endif()
 
-include_directories($ENV{CUDNN_PATH} $ENV{CUDNN_PATH}/include /ibm/gpfs-dataT/dri/install/include/)
-link_directories($ENV{CUDNN_PATH} $ENV{CUDNN_PATH}/lib $ENV{CUDNN_PATH}/lib64 /ibm/gpfs-dataT/dri/install/lib)
+
+
+include_directories(~/abaglada/nvidia/cuda/include/)
+link_directories(~/abaglada/nvidia/cuda/lib64)
 
 
 cuda_add_executable(trainlenet lenet.cu readubyte.cpp)
