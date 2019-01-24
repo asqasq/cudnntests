@@ -38,3 +38,7 @@ x64/
 Win32/
 *-ubyte
 *.pdb
+
+*.swp
+build/
+
