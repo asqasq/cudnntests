@@ -21,6 +21,26 @@
   }                                           \
 };
 
+#define n 4
+#define k 2
+#define m 3
+
+// A is a nxk matrix
+// B is a kxm matrix
+// Result C is nxm matrix
+
+
+static void print_matrix(float *M, int rows, int columns)
+{
+  printf("\n");
+  for (int i = 0; i < rows; i++) {
+    for (int j = 0; j < columns; j++) {
+      printf("%f ", M[i * columns + j]);
+    }
+    printf("\n");
+  }
+}
+
 int main(int argc, char **argv)
 {
 
@@ -38,10 +58,53 @@ int main(int argc, char **argv)
     exit(-1);
   }
 
+  // crete handles
   checkCudaErrors(cudaSetDevice(gpuid));
   checkCudaErrors(cublasCreate(&cublasHandle));
   checkCudnnErrors(cudnnCreate(&cudnnHandle));
 
+  float *A = (float*)malloc(sizeof(float) * n * k);
+  float *B = (float*)malloc(sizeof(float) * k * m);
+  float *C = (float*)malloc(sizeof(float) * n * m);
+
+  float v = 1.0f;
+  for (int i = 0; i < n; i++) {
+    for (int j = 0; j < k; j++) {
+      A[i * k + j] = v;
+      v = v + 1.0f;
+    }
+  }
+
+  for (int i = 0; i < k; i++) {
+    for (int j = 0; j < m; j++) {
+      B[i * m + j] = v;
+      v = v + 1.0f;
+    }
+  }
+
+
+  for (int i = 0; i < n; i++) {
+    for (int j = 0; j < m; j++) {
+      float sum = 0.0f;
+      for (int e = 0; e < k; e++) {
+        sum += A[i * k + e] * B[e * m + j];
+      }
+      C[i * m + j] = sum;
+      //C[0] = sum;
+    }
+  }
+
+
+
+  print_matrix(A, n, k);
+  print_matrix(B, k, m);
+  print_matrix(C, n, m);
+
+
+
+
+
+  //destroy handles
   cudnnDestroy(cudnnHandle);
   checkCudaErrors(cublasDestroy(cublasHandle));
 
