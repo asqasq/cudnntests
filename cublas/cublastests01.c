@@ -101,7 +101,28 @@ int main(int argc, char **argv)
   print_matrix(C, n, m);
 
 
+  // allocate A, B and C on the GPU
+  float *d_A, *d_B, *d_C;
+  cudaMalloc((void**)&d_A, sizeof(float) * n * k);
+  cudaMalloc((void**)&d_B, sizeof(float) * k * m);
+  cudaMalloc((void**)&d_C, sizeof(float) * n * m);
 
+  checkCudaErrors(cublasSetMatrix(n, k, sizeof(float), A, n, d_A, n));
+  checkCudaErrors(cublasSetMatrix(k, m, sizeof(float), B, k, d_B, k));
+
+  float alpha = 1.0f;
+  float beta = 0.0f;
+
+  //cublasSgemm(cublasHandle, CUBLAS_OP_N, CUBLAS_OP_N, n, k, m, &alpha,
+  //    d_A, n, d_B, k, &beta, d_C, n);
+  cublasSgemm(cublasHandle, CUBLAS_OP_T, CUBLAS_OP_T, n, k, m, &alpha,
+      d_A, n, d_B, k, &beta, d_C, n);
+
+
+  cublasGetMatrix(n, m, sizeof(float), d_C, n, C, n);
+
+  printf("\nCUDA result:\n");
+  print_matrix(C, n, m);
 
 
   //destroy handles
