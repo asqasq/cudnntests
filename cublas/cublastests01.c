@@ -83,6 +83,7 @@ int main(int argc, char **argv)
   }
 
 
+  // C = A * B
   for (int i = 0; i < n; i++) {
     for (int j = 0; j < m; j++) {
       float sum = 0.0f;
@@ -115,8 +116,8 @@ int main(int argc, char **argv)
 
   //cublasSgemm(cublasHandle, CUBLAS_OP_N, CUBLAS_OP_N, n, k, m, &alpha,
   //    d_A, n, d_B, k, &beta, d_C, n);
-  cublasSgemm(cublasHandle, CUBLAS_OP_T, CUBLAS_OP_T, n, k, m, &alpha,
-      d_A, n, d_B, k, &beta, d_C, n);
+  cublasSgemm(cublasHandle, CUBLAS_OP_N, CUBLAS_OP_N, m, n, k, &alpha,
+      d_B, m, d_A, k, &beta, d_C, m);
 
 
   cublasGetMatrix(n, m, sizeof(float), d_C, n, C, n);
