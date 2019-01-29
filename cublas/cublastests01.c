@@ -149,7 +149,19 @@ int main(int argc, char **argv)
   checkCudaErrors(cudaMemcpy(C2, d_C2, sizeof(float) * n * m, cudaMemcpyDeviceToHost));
   
   printf("\nCUDA result memcpy:\n");
-  print_matrix(C, n, m);
+  print_matrix(C2, n, m);
+
+  // free memory
+  checkCudaErrors(cudaFree(d_A));
+  checkCudaErrors(cudaFree(d_B));
+  checkCudaErrors(cudaFree(d_C));
+  checkCudaErrors(cudaFree(d_A2));
+  checkCudaErrors(cudaFree(d_B2));
+  checkCudaErrors(cudaFree(d_C2));
+  free(A);
+  free(B);
+  free(C);
+  free(C2);
 
   //destroy handles
   cudnnDestroy(cudnnHandle);
