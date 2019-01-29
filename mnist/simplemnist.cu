@@ -2,6 +2,24 @@
 #include <stdio.h>
 #include <readmnist.h>
 
+#define checkCudaErrors(status) {         \
+  if ((status) != 0) {                    \
+    printf("\nCUDA error %d\n", status);  \
+    exit(status);                         \
+  }                                       \
+};
+
+
+#define checkCudnnErrors(status) {            \
+  if ((status) != CUDNN_STATUS_SUCCESS) {     \
+    printf("\nCuDNN error %d: %s\n",          \
+           status,                            \
+           cudnnGetErrorString(status));      \
+    exit(status);                             \
+  }                                           \
+};
+
+
 
 // Matrix mulitplication
 // C = A * B
@@ -30,7 +48,7 @@ static void matrix_add(float *A, int rowA, int colA, float *B, int rowB, int col
 
 static void forward_propagation(float *input,
                                 float *weight1, float *bias1,
-                                float *fc1out, float *fc1biasout
+                                float *fc1out, float *fc1biasout,
                                 float *weight2, float *bias2,
                                 float *fc2out, float *fc2biasout)
 {
@@ -51,7 +69,6 @@ static void forward_propagation(float *input,
 int create_simple_network(char *trainimg, char *trainlb, char *tstimg, char *tstlb)
 {
     int res;
-    int gpu_id = 0;
 
     // load data    
     struct mnist_img_desc traindesc;
@@ -81,9 +98,9 @@ int create_simple_network(char *trainimg, char *trainlb, char *tstimg, char *tst
 1x10 * 1x10 = 1x10
 */
 
-    float weights1[784, 50];
+    float weights1[784 * 50];
     float bias1[50];
-    float weights2[50, 10];
+    float weights2[50 * 10];
     float bias2[10];
     
     float fc1out[50];
@@ -92,18 +109,29 @@ int create_simple_network(char *trainimg, char *trainlb, char *tstimg, char *tst
     float fc2out[10];
     float fc2biasout[10];
     
+    
+    
+    forward_propagation(traindesc.databufferf,
+                        weights1, bias1,
+                        fc1out, fc1biasout,
+                        weights2, bias2,
+                        fc2out, fc2biasout);
+    
+    return 0;
 }
 
-
+#if 0
 void bla() {
+    int gpu_id = 0;
+
     cudaSetDevice(gpu_id);
 
     cudnnHandle_t cudnn;
     cudnnCreate(&cudnn);
 
     cudnnTensorDescriptor_t input_descriptor;
-    checkCUDNN(cudnnCreateTensorDescriptor(&input_descriptor));
-    checkCUDNN(cudnnSetTensor4dDescriptor(input_descriptor,
+    checkCudnnErrors(cudnnCreateTensorDescriptor(&input_descriptor));
+    checkCudnnErrors(cudnnSetTensor4dDescriptor(input_descriptor,
                                           /*format=*/CUDNN_TENSOR_NHWC,
                                           /*dataType=*/CUDNN_DATA_FLOAT,
                                           /*batch_size=*/128,
@@ -111,4 +139,5 @@ void bla() {
                                           /*image_height=*/traindesc->rows,
                                           /*image_width=*/traindesc->cols));
 }
+#endif
 
