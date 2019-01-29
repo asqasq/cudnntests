@@ -19,6 +19,34 @@ static void matrix_multiplication(float *A, int rowA, int colA, float *B, int ro
   }
 }
 
+static void matrix_add(float *A, int rowA, int colA, float *B, int rowB, int colB, float *C)
+{
+    // C = A + B
+    for (int i = 0; i < (rowA * colA); i++) {
+        C[i] = A[i] + B[i];
+    }
+}
+
+
+static void forward_propagation(float *input,
+                                float *weight1, float *bias1,
+                                float *fc1out, float *fc1biasout
+                                float *weight2, float *bias2,
+                                float *fc2out, float *fc2biasout)
+{
+    matrix_multiplication(input, 1, 784,
+                          weight1, 784, 50,
+                          fc1out);
+
+    matrix_add(fc1out, 1, 50, bias1, 1, 50, fc1biasout);
+    
+    matrix_multiplication(fc1biasout, 1, 50,
+                          weight1, 50, 10,
+                          fc2out);
+
+    matrix_add(fc2out, 1, 10, bias2, 1, 10, fc2biasout);
+}
+
 
 int create_simple_network(char *trainimg, char *trainlb, char *tstimg, char *tstlb)
 {
@@ -57,6 +85,13 @@ int create_simple_network(char *trainimg, char *trainlb, char *tstimg, char *tst
     float bias1[50];
     float weights2[50, 10];
     float bias2[10];
+    
+    float fc1out[50];
+    float fc1biasout[50];
+    
+    float fc2out[10];
+    float fc2biasout[10];
+    
 }
 
 
