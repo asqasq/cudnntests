@@ -42,6 +42,23 @@ static void print_matrix(float *M, int rows, int columns)
   }
 }
 
+// Matrix mulitplication
+// C = A * B
+static void matrix_multiplication(float *A, int rowA, int colA, float *B, int rowB, int colB, float *C)
+{
+  // C = A * B
+  for (int i = 0; i < rowA; i++) {
+    for (int j = 0; j < colB; j++) {
+      float sum = 0.0f;
+      for (int e = 0; e < colA; e++) {
+        sum += A[i * colA + e] * B[e * colB + j];
+      }
+      C[i * colB + j] = sum;
+    }
+  }
+}
+
+
 int main(int argc, char **argv)
 {
 
@@ -99,6 +116,11 @@ int main(int argc, char **argv)
   }
 
 
+  print_matrix(A, n, k);
+  print_matrix(B, k, m);
+  print_matrix(C, n, m);
+
+  matrix_multiplication(A, n, k, B, k, m, C);
 
   print_matrix(A, n, k);
   print_matrix(B, k, m);
