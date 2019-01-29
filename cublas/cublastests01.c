@@ -3,6 +3,7 @@
 #include <cudnn.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 #define checkCudaErrors(status) {         \
   if ((status) != 0) {                    \
@@ -66,6 +67,8 @@ int main(int argc, char **argv)
   float *A = (float*)malloc(sizeof(float) * n * k);
   float *B = (float*)malloc(sizeof(float) * k * m);
   float *C = (float*)malloc(sizeof(float) * n * m);
+  float *C2 = (float*)malloc(sizeof(float) * n * m);
+  memset(C2, 0, sizeof(float) * n * m);
 
   float v = 1.0f;
   for (int i = 0; i < n; i++) {
@@ -125,6 +128,28 @@ int main(int argc, char **argv)
   printf("\nCUDA result:\n");
   print_matrix(C, n, m);
 
+
+  // allocate A, B and C on the GPU
+  float *d_A2, *d_B2, *d_C2;
+  cudaMalloc((void**)&d_A2, sizeof(float) * n * k);
+  cudaMalloc((void**)&d_B2, sizeof(float) * k * m);
+  cudaMalloc((void**)&d_C2, sizeof(float) * n * m);
+
+//  checkCudaErrors(cudaMemcpyAsync(d_A2, A, sizeof(float) * n * k, cudaMemcpyHostToDevice));
+//  checkCudaErrors(cudaMemcpyAsync(d_B2, B, sizeof(float) * k * m, cudaMemcpyHostToDevice));
+  checkCudaErrors(cudaMemcpy(d_A2, A, sizeof(float) * n * k, cudaMemcpyHostToDevice));
+  checkCudaErrors(cudaMemcpy(d_B2, B, sizeof(float) * k * m, cudaMemcpyHostToDevice));
+
+  //cublasSgemm(cublasHandle, CUBLAS_OP_N, CUBLAS_OP_N, n, k, m, &alpha,
+  //    d_A, n, d_B, k, &beta, d_C, n);
+  cublasSgemm(cublasHandle, CUBLAS_OP_N, CUBLAS_OP_N, m, n, k, &alpha,
+      d_B2, m, d_A2, k, &beta, d_C2, m);
+
+//  checkCudaErrors(cudaMemcpyAsync(C2, d_C2, sizeof(float) * n * m, cudaMemcpyDeviceToHost));
+  checkCudaErrors(cudaMemcpy(C2, d_C2, sizeof(float) * n * m, cudaMemcpyDeviceToHost));
+  
+  printf("\nCUDA result memcpy:\n");
+  print_matrix(C, n, m);
 
   //destroy handles
   cudnnDestroy(cudnnHandle);
