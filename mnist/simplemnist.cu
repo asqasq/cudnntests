@@ -45,6 +45,13 @@ static void matrix_add(float *A, int rowA, int colA, float *B, int rowB, int col
     }
 }
 
+static void matrix_scaling(float v, float *A, int rowA, int colA)
+{
+    for (int i = 0; i < (rowA * colA); i++) {
+        A[i] = v * A[i];
+    }
+}
+
 
 static void forward_propagation(float *input,
                                 float *weight1, float *bias1,
