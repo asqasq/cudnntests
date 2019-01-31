@@ -1,6 +1,8 @@
 #include <cudnn.h>
 #include <stdio.h>
 #include <readmnist.h>
+#include <math.h>
+#include <stdlib.h>
 
 #define checkCudaErrors(status) {         \
   if ((status) != 0) {                    \
@@ -19,6 +21,17 @@
   }                                           \
 };
 
+
+static void print_matrix(float *M, int rows, int columns)
+{
+  printf("\n");
+  for (int i = 0; i < rows; i++) {
+    for (int j = 0; j < columns; j++) {
+      printf("%f ", M[i * columns + j]);
+    }
+    printf("\n");
+  }
+}
 
 
 // Matrix mulitplication
@@ -144,39 +157,26 @@ int create_simple_network(char *trainimg, char *trainlb, char *tstimg, char *tst
     return 0;
 }
 
-#if 0
-void bla() {
-    int gpu_id = 0;
+static int tests()
+{
+    const int rows = 5;
+    const int cols = 3;
 
-    cudaSetDevice(gpu_id);
+    float *m = (float*)malloc(sizeof(float) * rows * cols);
+    float *r = (float*)malloc(sizeof(float) * rows * cols);
 
-    cudnnHandle_t cudnn;
-    cudnnCreate(&cudnn);
+    for (int i = 0; i < rows * cols; i++) {
+        m[i] = 1.0f;
+    }
 
-    cudnnTensorDescriptor_t input_descriptor;
-    checkCudnnErrors(cudnnCreateTensorDescriptor(&input_descriptor));
-    checkCudnnErrors(cudnnSetTensor4dDescriptor(input_descriptor,
-                                          /*format=*/CUDNN_TENSOR_NHWC,
-                                          /*dataType=*/CUDNN_DATA_FLOAT,
-                                          /*batch_size=*/128,
-                                          /*channels=*/1,
-                                          /*image_height=*/traindesc->rows,
-                                          /*image_width=*/traindesc->cols));
+    matrix_sigma(m, rows, cols, r);
+    print_matrix(m, rows, cols);
+    print_matrix(r, rows, cols);
 }
 
-
-#include <stdio.h>
-#include <math.h>
-
-int main () {
-   double x = 0;
-  
-   printf("The exponential value of %lf is %lf\n", x, exp(x));
-   printf("The exponential value of %lf is %lf\n", x+1, exp(x+1));
-   printf("The exponential value of %lf is %lf\n", x+2, exp(x+2));
-   
-   return(0);
+int main(int argc, char **argv)
+{
+    tests();
+    return 0;
 }
-
-#endif
 

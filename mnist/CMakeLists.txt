@@ -30,8 +30,11 @@ link_directories(~/abaglada/nvidia/cuda/lib64)
 include_directories(.)
 
 
-cuda_add_executable(trainlenet lenet.cu readubyte.cpp simplemnist.cu readmnist.cpp)
+cuda_add_executable(trainlenet lenet.cu readubyte.cpp readmnist.cpp)
 cuda_add_cublas_to_target(trainlenet)
+
+cuda_add_executable(simplemnist simplemnist.cpp readmnist.cpp)
+target_link_libraries(simplemnist m)
 
 if(USE_GFLAGS)
   target_link_libraries(trainlenet gflags cudnn)
