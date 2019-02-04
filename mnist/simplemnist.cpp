@@ -178,6 +178,8 @@ int create_simple_network(char *trainimg, char *trainlb, char *tstimg, char *tst
     float fc2out[10];
     float fc2biasout[10];
     float fc2activationout[10];
+
+    int prediction = -1;
     
     
     
@@ -188,7 +190,17 @@ int create_simple_network(char *trainimg, char *trainlb, char *tstimg, char *tst
                         weights2, bias2,
                         fc2out, fc2biasout,
                         fc2activationout);
+
+
+    prediction = predict(testdesc.databufferf,
+                         weights1, bias1,
+                         fc1out, fc1biasout,
+                         fc1activationout,
+                         weights2, bias2,
+                         fc2out, fc2biasout,
+                         fc2activationout);
     
+    printf("\nPredicted number: %d\n", prediction);
     return 0;
 }
 
@@ -211,7 +223,11 @@ static int tests()
 
 int main(int argc, char **argv)
 {
-    tests();
+    if (argc == 5) {
+        create_simple_network(argv[1], argv[2], argv[3], argv[4]);
+    } else {
+        tests();
+    }
     return 0;
 }
 
