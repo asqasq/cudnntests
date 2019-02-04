@@ -105,13 +105,13 @@ static void backward_propagation()
 
 
 
-static int predict(char *image,
-                                float *weight1, float *bias1,
-                                float *fc1out, float *fc1biasout,
-                                float *fc1activationout,
-                                float *weight2, float *bias2,
-                                float *fc2out, float *fc2biasout,
-                                float *fc2activationout))
+static int predict(float *image,
+                   float *weight1, float *bias1,
+                   float *fc1out, float *fc1biasout,
+                   float *fc1activationout,
+                   float *weight2, float *bias2,
+                   float *fc2out, float *fc2biasout,
+                   float *fc2activationout)
 {
     float current_value = 0.0f;
     int pred = 0;
@@ -125,10 +125,11 @@ static int predict(char *image,
                         fc2activationout);
 
     for (int i = 0; i < 10; i++) {
-        if (fc2activationout[i] > current_vale) {
+        if (fc2activationout[i] > current_value) {
             pred = i;
             current_value = fc2activationout[i];
         }
+    }
     return (pred);
 }
 
