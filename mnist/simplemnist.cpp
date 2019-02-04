@@ -99,6 +99,40 @@ static void forward_propagation(float *input,
 }
 
 
+static void backward_propagation()
+{
+}
+
+
+
+static int predict(char *image,
+                                float *weight1, float *bias1,
+                                float *fc1out, float *fc1biasout,
+                                float *fc1activationout,
+                                float *weight2, float *bias2,
+                                float *fc2out, float *fc2biasout,
+                                float *fc2activationout))
+{
+    float current_value = 0.0f;
+    int pred = 0;
+
+    forward_propagation(image,
+                        weight1, bias1,
+                        fc1out, fc1biasout,
+                        fc1activationout,
+                        weight2, bias2,
+                        fc2out, fc2biasout,
+                        fc2activationout);
+
+    for (int i = 0; i < 10; i++) {
+        if (fc2activationout[i] > current_vale) {
+            pred = i;
+            current_value = fc2activationout[i];
+        }
+    return (pred);
+}
+
+
 int create_simple_network(char *trainimg, char *trainlb, char *tstimg, char *tstlb)
 {
     int res;
