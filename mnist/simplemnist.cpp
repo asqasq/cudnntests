@@ -3,6 +3,7 @@
 #include <readmnist.h>
 #include <math.h>
 #include <stdlib.h>
+#include <sys/time.h>
 
 #define checkCudaErrors(status) {         \
   if ((status) != 0) {                    \
@@ -71,6 +72,24 @@ static void matrix_sigma(float *A, int rowA, int colA, float *C)
         C[i] = (1.0f / (1.0f + exp(-A[i])));
     }
 }
+
+static void matrix_random_init(float *A, int rows, int cols)
+{
+    int n = rows * cols;
+
+    for (int i = 0; i < n; i++) {
+        A[i] = (float)random()/((float)RAND_MAX);
+    }
+}
+
+static void init_random_generator(void)
+{
+    struct timeval tv;
+
+    gettimeofday(&tv, NULL);
+    srandom((int)tv.tv_usec);
+}
+
 
 
 static void forward_propagation(float *input,
@@ -180,7 +199,25 @@ int create_simple_network(char *trainimg, char *trainlb, char *tstimg, char *tst
     float fc2activationout[10];
 
     int prediction = -1;
-    
+
+
+
+    init_random_generator();
+
+    matrix_random_init(weights1, 784, 50);
+    matrix_random_init(bias1, 1, 50);
+
+    matrix_random_init(weights2, 50, 10);
+    matrix_random_init(bias2, 1, 10);
+
+    matrix_random_init(fc1out, 1, 50);
+    matrix_random_init(fc1biasout, 1, 50);
+    matrix_random_init(fc1activationout, 1, 50);
+
+    matrix_random_init(fc2out, 1, 10);
+    matrix_random_init(fc2biasout, 1, 10);
+    matrix_random_init(fc2activationout, 1, 10);
+
     
     
     forward_propagation(traindesc.databufferf,
@@ -192,7 +229,7 @@ int create_simple_network(char *trainimg, char *trainlb, char *tstimg, char *tst
                         fc2activationout);
 
 
-    prediction = predict(testdesc.databufferf,
+    prediction = predict(&(testdesc.databufferf[0]),
                          weights1, bias1,
                          fc1out, fc1biasout,
                          fc1activationout,
