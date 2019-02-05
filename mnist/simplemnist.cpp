@@ -246,16 +246,35 @@ static int tests()
     const int rows = 5;
     const int cols = 3;
 
-    float *m = (float*)malloc(sizeof(float) * rows * cols);
-    float *r = (float*)malloc(sizeof(float) * rows * cols);
+    float *A = (float*)malloc(sizeof(float) * rows * cols);
+    float *B = (float*)malloc(sizeof(float) * rows * cols);
+    float *C = (float*)malloc(sizeof(float) * rows * cols);
 
     for (int i = 0; i < rows * cols; i++) {
-        m[i] = 1.0f;
+        A[i] = 1.0f;
     }
 
-    matrix_sigma(m, rows, cols, r);
-    print_matrix(m, rows, cols);
-    print_matrix(r, rows, cols);
+    for (int i = 0; i < rows * cols; i++) {
+        B[i] = (float)i;
+    }
+    print_matrix(A, rows, cols);
+    print_matrix(B, rows, cols);
+
+    matrix_sigma(A, rows, cols, C);
+    print_matrix(C, rows, cols);
+
+    matrix_add(A, rows, cols, B, rows, cols, C);
+    print_matrix(C, rows, cols);
+
+
+    print_matrix(A, rows, cols);
+    print_matrix(B, cols, rows);
+    //C_3x3 = B'_3x5 * A_5x3
+    matrix_multiplication(B, cols, rows, A, rows, cols, C);
+    print_matrix(C, cols, cols);
+
+    matrix_scaling(0.711f, A, rows, cols, C);
+    print_matrix(C, rows, cols);
 }
 
 int main(int argc, char **argv)
