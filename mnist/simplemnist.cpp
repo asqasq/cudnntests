@@ -109,7 +109,7 @@ static void forward_propagation(float *input,
     matrix_sigma(fc1biasout, 1, 50, fc1activationout);
     
     matrix_multiplication(fc1activationout, 1, 50,
-                          weight1, 50, 10,
+                          weight2, 50, 10,
                           fc2out);
 
     matrix_add(fc2out, 1, 10, bias2, 1, 10, fc2biasout);
@@ -144,6 +144,7 @@ static int predict(float *image,
                         fc2activationout);
 
     for (int i = 0; i < 10; i++) {
+        printf("output activation %d: %f\n", i, fc2activationout[i]);
         if (fc2activationout[i] > current_value) {
             pred = i;
             current_value = fc2activationout[i];
@@ -210,13 +211,6 @@ int create_simple_network(char *trainimg, char *trainlb, char *tstimg, char *tst
     matrix_random_init(weights2, 50, 10);
     matrix_random_init(bias2, 1, 10);
 
-    matrix_random_init(fc1out, 1, 50);
-    matrix_random_init(fc1biasout, 1, 50);
-    matrix_random_init(fc1activationout, 1, 50);
-
-    matrix_random_init(fc2out, 1, 10);
-    matrix_random_init(fc2biasout, 1, 10);
-    matrix_random_init(fc2activationout, 1, 10);
 
     
     
