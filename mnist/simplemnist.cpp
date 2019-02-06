@@ -117,9 +117,42 @@ static void forward_propagation(float *input,
     matrix_sigma(fc2biasout, 1, 10, fc2activationout);
 }
 
+/*
+forward:
 
-static void backward_propagation()
+[w5 w6] [outh1] = [w5*out_h1 + w6*out_h2] = [net_o1]
+[w7 w8] [outh2] = [w7*out_h1 + w8*out_h2] = [net_o2]
+
+
+backwards:
+[v1] * [out_h1 out_h2] = [w5, w6]
+[v2]                     [w7, w8]
+
+*/
+
+static void backward_propagation(float *target /*y=label*/,
+                                float *weight1, float *bias1,
+                                float *fc1out, float *fc1biasout,
+                                float *fc1activationout,
+                                float *weight2, float *bias2,
+                                float *fc2out, float *fc2biasout,
+                                float *fc2activationout,
+                                float *fc2v, float *dweight2)
 {
+    fc2v[0] = -(target[0] - fc2activationout[0]) * fc2activationout[0]*(1 - fc2activationout[0]);
+    fc2v[1] = -(target[1] - fc2activationout[1]) * fc2activationout[1]*(1 - fc2activationout[1]);
+    fc2v[2] = -(target[2] - fc2activationout[2]) * fc2activationout[2]*(1 - fc2activationout[2]);
+    fc2v[3] = -(target[3] - fc2activationout[3]) * fc2activationout[3]*(1 - fc2activationout[3]);
+    fc2v[4] = -(target[4] - fc2activationout[4]) * fc2activationout[4]*(1 - fc2activationout[4]);
+    fc2v[5] = -(target[5] - fc2activationout[5]) * fc2activationout[5]*(1 - fc2activationout[5]);
+    fc2v[6] = -(target[6] - fc2activationout[6]) * fc2activationout[6]*(1 - fc2activationout[6]);
+    fc2v[7] = -(target[7] - fc2activationout[7]) * fc2activationout[7]*(1 - fc2activationout[7]);
+    fc2v[8] = -(target[8] - fc2activationout[8]) * fc2activationout[8]*(1 - fc2activationout[8]);
+    fc2v[9] = -(target[9] - fc2activationout[9]) * fc2activationout[9]*(1 - fc2activationout[9]);
+    
+    matrix_multiplication(fc2v, 10, 1,
+                          fc1activationout, 1, 50,
+                          dweight2);
 }
 
 
