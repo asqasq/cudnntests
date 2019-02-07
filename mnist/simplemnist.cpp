@@ -23,12 +23,35 @@
 };
 
 
-static void print_matrix(float *M, int rows, int columns)
+struct matrix {
+    float *M;
+    int rows;
+    int columns;
+};
+
+static struct matrix* allocate_matrix(int rows, int columns)
+{
+    struct matrix *tmp = (struct matrix*)malloc(sizeof(struct matrix));
+    tmp->M = (float*)malloc(sizeof(float) * rows * columns);
+    tmp->rows = rows;
+    tmp->columns = columns;
+    return tmp;
+}
+
+static void free_matrix(struct matrix *M)
+{
+    free(M->M);
+    free(M);
+}
+
+
+
+static void print_matrix(struct matrix *M)
 {
   printf("\n");
-  for (int i = 0; i < rows; i++) {
-    for (int j = 0; j < columns; j++) {
-      printf("%f ", M[i * columns + j]);
+  for (int i = 0; i < M->rows; i++) {
+    for (int j = 0; j < M->columns; j++) {
+      printf("%f ", M->M[i * M->columns + j]);
     }
     printf("\n");
   }
@@ -37,48 +60,48 @@ static void print_matrix(float *M, int rows, int columns)
 
 // Matrix mulitplication
 // C = A * B
-static void matrix_multiplication(float *A, int rowA, int colA, float *B, int rowB, int colB, float *C)
+static void matrix_multiplication(struct matrix *A, struct matrix *B, struct matrix *C)
 {
   // C = A * B
-  for (int i = 0; i < rowA; i++) {
-    for (int j = 0; j < colB; j++) {
+  for (int i = 0; i < A->rows; i++) {
+    for (int j = 0; j < B->columns; j++) {
       float sum = 0.0f;
-      for (int e = 0; e < colA; e++) {
-        sum += A[i * colA + e] * B[e * colB + j];
+      for (int e = 0; e < A->columns; e++) {
+        sum += A->M[i * A->columns + e] * B->M[e * B->columns + j];
       }
-      C[i * colB + j] = sum;
+      C->M[i * B->columns + j] = sum;
     }
   }
 }
 
-static void matrix_add(float *A, int rowA, int colA, float *B, int rowB, int colB, float *C)
+static void matrix_add(struct matrix *A, struct matrix *B, struct matrix *C)
 {
     // C = A + B
-    for (int i = 0; i < (rowA * colA); i++) {
-        C[i] = A[i] + B[i];
+    for (int i = 0; i < (A->rows * A->columns); i++) {
+        C->M[i] = A->M[i] + B->M[i];
     }
 }
 
-static void matrix_scaling(float v, float *A, int rowA, int colA, float *C)
+static void matrix_scaling(float v, struct matrix *A, struct matrix *C)
 {
-    for (int i = 0; i < (rowA * colA); i++) {
-        C[i] = v * A[i];
+    for (int i = 0; i < (A->rows * A->columns); i++) {
+        C->M[i] = v * A->M[i];
     }
 }
 
-static void matrix_sigma(float *A, int rowA, int colA, float *C)
+static void matrix_sigma(struct matrix *A, struct matrix *C)
 {
-    for (int i = 0; i < (rowA * colA); i++) {
-        C[i] = (1.0f / (1.0f + exp(-A[i])));
+    for (int i = 0; i < (A->rows * A->columns); i++) {
+        C->M[i] = (1.0f / (1.0f + exp(-A->M[i])));
     }
 }
 
-static void matrix_random_init(float *A, int rows, int cols)
+static void matrix_random_init(struct matrix *A)
 {
-    int n = rows * cols;
+    int n = A->rows * A->columns;
 
     for (int i = 0; i < n; i++) {
-        A[i] = (float)random()/((float)RAND_MAX);
+        A->M[i] = (float)random()/((float)RAND_MAX);
     }
 }
 
@@ -92,29 +115,29 @@ static void init_random_generator(void)
 
 
 
-static void forward_propagation(float *input,
-                                float *weight1, float *bias1,
-                                float *fc1out, float *fc1biasout,
-                                float *fc1activationout,
-                                float *weight2, float *bias2,
-                                float *fc2out, float *fc2biasout,
-                                float *fc2activationout)
+static void forward_propagation(struct matrix *input,
+                                struct matrix *weight1, struct matrix *bias1,
+                                struct matrix *fc1out, struct matrix *fc1biasout,
+                                struct matrix *fc1activationout,
+                                struct matrix *weight2, struct matrix *bias2,
+                                struct matrix *fc2out, struct matrix *fc2biasout,
+                                struct matrix *fc2activationout)
 {
-    matrix_multiplication(input, 1, 784,
-                          weight1, 784, 50,
+    matrix_multiplication(input,
+                          weight1,
                           fc1out);
 
-    matrix_add(fc1out, 1, 50, bias1, 1, 50, fc1biasout);
+    matrix_add(fc1out, bias1, fc1biasout);
 
-    matrix_sigma(fc1biasout, 1, 50, fc1activationout);
-    
-    matrix_multiplication(fc1activationout, 1, 50,
-                          weight2, 50, 10,
+    matrix_sigma(fc1biasout, fc1activationout);
+
+    matrix_multiplication(fc1activationout,
+                          weight2,
                           fc2out);
 
-    matrix_add(fc2out, 1, 10, bias2, 1, 10, fc2biasout);
+    matrix_add(fc2out, bias2, fc2biasout);
 
-    matrix_sigma(fc2biasout, 1, 10, fc2activationout);
+    matrix_sigma(fc2biasout, fc2activationout);
 }
 
 /*
@@ -130,40 +153,40 @@ backwards:
 
 */
 
-static void backward_propagation(float *target /*y=label*/,
-                                float *weight1, float *bias1,
-                                float *fc1out, float *fc1biasout,
-                                float *fc1activationout,
-                                float *weight2, float *bias2,
-                                float *fc2out, float *fc2biasout,
-                                float *fc2activationout,
-                                float *fc2v, float *dweight2)
+static void backward_propagation(struct matrix *target /*y=label*/,
+                                struct matrix *weight1, struct matrix *bias1,
+                                struct matrix *fc1out, struct matrix *fc1biasout,
+                                struct matrix *fc1activationout,
+                                struct matrix *weight2, struct matrix *bias2,
+                                struct matrix *fc2out, struct matrix *fc2biasout,
+                                struct matrix *fc2activationout,
+                                struct matrix *fc2v, struct matrix *dweight2)
 {
-    fc2v[0] = -(target[0] - fc2activationout[0]) * fc2activationout[0]*(1 - fc2activationout[0]);
-    fc2v[1] = -(target[1] - fc2activationout[1]) * fc2activationout[1]*(1 - fc2activationout[1]);
-    fc2v[2] = -(target[2] - fc2activationout[2]) * fc2activationout[2]*(1 - fc2activationout[2]);
-    fc2v[3] = -(target[3] - fc2activationout[3]) * fc2activationout[3]*(1 - fc2activationout[3]);
-    fc2v[4] = -(target[4] - fc2activationout[4]) * fc2activationout[4]*(1 - fc2activationout[4]);
-    fc2v[5] = -(target[5] - fc2activationout[5]) * fc2activationout[5]*(1 - fc2activationout[5]);
-    fc2v[6] = -(target[6] - fc2activationout[6]) * fc2activationout[6]*(1 - fc2activationout[6]);
-    fc2v[7] = -(target[7] - fc2activationout[7]) * fc2activationout[7]*(1 - fc2activationout[7]);
-    fc2v[8] = -(target[8] - fc2activationout[8]) * fc2activationout[8]*(1 - fc2activationout[8]);
-    fc2v[9] = -(target[9] - fc2activationout[9]) * fc2activationout[9]*(1 - fc2activationout[9]);
-    
-    matrix_multiplication(fc2v, 10, 1,
-                          fc1activationout, 1, 50,
+    fc2v->M[0] = -(target->M[0] - fc2activationout->M[0]) * fc2activationout->M[0]*(1 - fc2activationout->M[0]);
+    fc2v->M[1] = -(target->M[1] - fc2activationout->M[1]) * fc2activationout->M[1]*(1 - fc2activationout->M[1]);
+    fc2v->M[2] = -(target->M[2] - fc2activationout->M[2]) * fc2activationout->M[2]*(1 - fc2activationout->M[2]);
+    fc2v->M[3] = -(target->M[3] - fc2activationout->M[3]) * fc2activationout->M[3]*(1 - fc2activationout->M[3]);
+    fc2v->M[4] = -(target->M[4] - fc2activationout->M[4]) * fc2activationout->M[4]*(1 - fc2activationout->M[4]);
+    fc2v->M[5] = -(target->M[5] - fc2activationout->M[5]) * fc2activationout->M[5]*(1 - fc2activationout->M[5]);
+    fc2v->M[6] = -(target->M[6] - fc2activationout->M[6]) * fc2activationout->M[6]*(1 - fc2activationout->M[6]);
+    fc2v->M[7] = -(target->M[7] - fc2activationout->M[7]) * fc2activationout->M[7]*(1 - fc2activationout->M[7]);
+    fc2v->M[8] = -(target->M[8] - fc2activationout->M[8]) * fc2activationout->M[8]*(1 - fc2activationout->M[8]);
+    fc2v->M[9] = -(target->M[9] - fc2activationout->M[9]) * fc2activationout->M[9]*(1 - fc2activationout->M[9]);
+
+    matrix_multiplication(fc2v,
+                          fc1activationout,
                           dweight2);
 }
 
 
 
-static int predict(float *image,
-                   float *weight1, float *bias1,
-                   float *fc1out, float *fc1biasout,
-                   float *fc1activationout,
-                   float *weight2, float *bias2,
-                   float *fc2out, float *fc2biasout,
-                   float *fc2activationout)
+static int predict(struct matrix *image,
+                   struct matrix *weight1, struct matrix *bias1,
+                   struct matrix *fc1out, struct matrix *fc1biasout,
+                   struct matrix *fc1activationout,
+                   struct matrix *weight2, struct matrix *bias2,
+                   struct matrix *fc2out, struct matrix *fc2biasout,
+                   struct matrix *fc2activationout)
 {
     float current_value = 0.0f;
     int pred = 0;
@@ -177,10 +200,10 @@ static int predict(float *image,
                         fc2activationout);
 
     for (int i = 0; i < 10; i++) {
-        printf("output activation %d: %f\n", i, fc2activationout[i]);
-        if (fc2activationout[i] > current_value) {
+        printf("output activation %d: %f\n", i, fc2activationout->M[i]);
+        if (fc2activationout->M[i] > current_value) {
             pred = i;
-            current_value = fc2activationout[i];
+            current_value = fc2activationout->M[i];
         }
     }
     return (pred);
@@ -219,18 +242,18 @@ int create_simple_network(char *trainimg, char *trainlb, char *tstimg, char *tst
 1x10 * 1x10 = 1x10
 */
 
-    float weights1[784 * 50];
-    float bias1[50];
-    float weights2[50 * 10];
-    float bias2[10];
-    
-    float fc1out[50];
-    float fc1biasout[50];
-    float fc1activationout[50];
-    
-    float fc2out[10];
-    float fc2biasout[10];
-    float fc2activationout[10];
+    struct matrix* weights1 = allocate_matrix(784, 50);
+    struct matrix* bias1 = allocate_matrix(50, 1);
+    struct matrix* weights2 = allocate_matrix(50, 10);
+    struct matrix* bias2 = allocate_matrix(10, 1);
+
+    struct matrix* fc1out = allocate_matrix(50, 1);
+    struct matrix* fc1biasout = allocate_matrix(50, 1);
+    struct matrix* fc1activationout = allocate_matrix(50, 1);
+
+    struct matrix* fc2out = allocate_matrix(10, 1);
+    struct matrix* fc2biasout = allocate_matrix(10, 1);
+    struct matrix* fc2activationout = allocate_matrix(10, 1);
 
     int prediction = -1;
 
@@ -238,16 +261,18 @@ int create_simple_network(char *trainimg, char *trainlb, char *tstimg, char *tst
 
     init_random_generator();
 
-    matrix_random_init(weights1, 784, 50);
-    matrix_random_init(bias1, 1, 50);
+    matrix_random_init(weights1);
+    matrix_random_init(bias1);
 
-    matrix_random_init(weights2, 50, 10);
-    matrix_random_init(bias2, 1, 10);
+    matrix_random_init(weights2);
+    matrix_random_init(bias2);
 
-
+    struct matrix input_image;
+    input_image.rows = 28;
+    input_image.columns = 28;
     
-    
-    forward_propagation(traindesc.databufferf,
+    input_image.M = &(traindesc.databufferf[0]);
+    forward_propagation(&input_image,
                         weights1, bias1,
                         fc1out, fc1biasout,
                         fc1activationout,
@@ -256,7 +281,8 @@ int create_simple_network(char *trainimg, char *trainlb, char *tstimg, char *tst
                         fc2activationout);
 
 
-    prediction = predict(&(testdesc.databufferf[0]),
+    input_image.M = &(testdesc.databufferf[0]);
+    prediction = predict(&input_image,
                          weights1, bias1,
                          fc1out, fc1biasout,
                          fc1activationout,
@@ -272,36 +298,35 @@ static int tests()
 {
     const int rows = 5;
     const int cols = 3;
+    struct matrix* A = allocate_matrix(rows, cols);
+    struct matrix* B = allocate_matrix(rows, cols);
+    struct matrix* C = allocate_matrix(rows, cols);
 
-    float *A = (float*)malloc(sizeof(float) * rows * cols);
-    float *B = (float*)malloc(sizeof(float) * rows * cols);
-    float *C = (float*)malloc(sizeof(float) * rows * cols);
-
-    for (int i = 0; i < rows * cols; i++) {
-        A[i] = 1.0f;
+    for (int i = 0; i < A->rows * A->columns; i++) {
+        A->M[i] = 1.0f;
     }
 
-    for (int i = 0; i < rows * cols; i++) {
-        B[i] = (float)i;
+    for (int i = 0; i < B->rows * B->columns; i++) {
+        B->M[i] = (float)i;
     }
-    print_matrix(A, rows, cols);
-    print_matrix(B, rows, cols);
+    print_matrix(A);
+    print_matrix(B);
 
-    matrix_sigma(A, rows, cols, C);
-    print_matrix(C, rows, cols);
+    matrix_sigma(A, C);
+    print_matrix(C);
 
-    matrix_add(A, rows, cols, B, rows, cols, C);
-    print_matrix(C, rows, cols);
+    matrix_add(A, B, C);
+    print_matrix(C);
 
 
-    print_matrix(A, rows, cols);
-    print_matrix(B, cols, rows);
+    print_matrix(A);
+    print_matrix(B);
     //C_3x3 = B'_3x5 * A_5x3
-    matrix_multiplication(B, cols, rows, A, rows, cols, C);
-    print_matrix(C, cols, cols);
+    matrix_multiplication(B, A, C);
+    print_matrix(C);
 
-    matrix_scaling(0.711f, A, rows, cols, C);
-    print_matrix(C, rows, cols);
+    matrix_scaling(0.711f, A, C);
+    print_matrix(C);
 }
 
 int main(int argc, char **argv)
