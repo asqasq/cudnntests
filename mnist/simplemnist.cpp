@@ -27,6 +27,7 @@ struct matrix {
     float *M;
     int rows;
     int columns;
+    bool transposed;
 };
 
 static struct matrix* allocate_matrix(int rows, int columns)
@@ -35,6 +36,7 @@ static struct matrix* allocate_matrix(int rows, int columns)
     tmp->M = (float*)malloc(sizeof(float) * rows * columns);
     tmp->rows = rows;
     tmp->columns = columns;
+    tmp->transposed = false;
     return tmp;
 }
 
@@ -45,15 +47,29 @@ static void free_matrix(struct matrix *M)
 }
 
 
+static void matrix_transpose(struct matrix *M)
+{
+    M->transposed = !M->transposed;
+}
+
 
 static void print_matrix(struct matrix *M)
 {
   printf("\n");
-  for (int i = 0; i < M->rows; i++) {
-    for (int j = 0; j < M->columns; j++) {
-      printf("%f ", M->M[i * M->columns + j]);
-    }
-    printf("\n");
+  if (!M->transposed) {
+      for (int i = 0; i < M->rows; i++) {
+        for (int j = 0; j < M->columns; j++) {
+          printf("%f ", M->M[i * M->columns + j]);
+        }
+        printf("\n");
+      }
+  } else {
+      for (int j = 0; j < M->columns; j++) {
+        for (int i = 0; i < M->rows; i++) {
+          printf("%f ", M->M[i * M->columns + j]);
+        }
+        printf("\n");
+      }
   }
 }
 
@@ -327,6 +343,12 @@ static int tests()
 
     matrix_scaling(0.711f, A, C);
     print_matrix(C);
+
+    print_matrix(B);
+    matrix_transpose(B);
+    print_matrix(B);
+    matrix_transpose(B);
+    print_matrix(B);
 }
 
 int main(int argc, char **argv)
