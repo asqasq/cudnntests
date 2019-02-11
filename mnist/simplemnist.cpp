@@ -192,21 +192,21 @@ static void forward_propagation(struct matrix *input,
                                 struct matrix *fc2out, struct matrix *fc2biasout,
                                 struct matrix *fc2activationout)
 {
-    matrix_multiplication(input,
-                          weight1,
-                          fc1out);
+    checkMatrixOp(matrix_multiplication(input,
+                                        weight1,
+                                        fc1out));
 
-    matrix_add(fc1out, bias1, fc1biasout);
+    checkMatrixOp(matrix_add(fc1out, bias1, fc1biasout));
 
-    matrix_sigma(fc1biasout, fc1activationout);
+    checkMatrixOp(matrix_sigma(fc1biasout, fc1activationout));
 
-    matrix_multiplication(fc1activationout,
-                          weight2,
-                          fc2out);
+    checkMatrixOp(matrix_multiplication(fc1activationout,
+                                        weight2,
+                                        fc2out));
 
-    matrix_add(fc2out, bias2, fc2biasout);
+    checkMatrixOp(matrix_add(fc2out, bias2, fc2biasout));
 
-    matrix_sigma(fc2biasout, fc2activationout);
+    checkMatrixOp(matrix_sigma(fc2biasout, fc2activationout));
 }
 
 /*
@@ -242,9 +242,9 @@ static void backward_propagation(struct matrix *target /*y=label*/,
     fc2v->M[8] = -(target->M[8] - fc2activationout->M[8]) * fc2activationout->M[8]*(1 - fc2activationout->M[8]);
     fc2v->M[9] = -(target->M[9] - fc2activationout->M[9]) * fc2activationout->M[9]*(1 - fc2activationout->M[9]);
 
-    matrix_multiplication(fc2v,
-                          fc1activationout,
-                          dweight2);
+    checkMatrixOp(matrix_multiplication(fc2v,
+                                        fc1activationout,
+                                        dweight2));
 }
 
 
