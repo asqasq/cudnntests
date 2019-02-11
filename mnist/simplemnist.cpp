@@ -23,6 +23,13 @@
 };
 
 
+#define checkMatrixOp(status) {         \
+  if (!(status)) {                      \
+    printf("\nMatrix operation failed: %s %s %d\n", __FILE__, __func__, __LINE__); \
+  } \
+};
+
+
 struct matrix {
     float *M;
     int rows;
@@ -95,18 +102,25 @@ static void print_matrix(struct matrix *M)
 
 // Matrix mulitplication
 // C = A * B
-static void matrix_multiplication(struct matrix *A, struct matrix *B, struct matrix *C)
+static bool matrix_multiplication(struct matrix *A, struct matrix *B, struct matrix *C)
 {
+  if ((matrix_get_columns(A) != matrix_get_rows(B)) ||
+      (matrix_get_rows(A) != matrix_get_rows(C)) ||
+      (matrix_get_columns(B) != matrix_get_columns(C))) {
+        return false;
+  }
+
   // C = A * B
-  for (int i = 0; i < A->rows; i++) {
-    for (int j = 0; j < B->columns; j++) {
+  for (int i = 0; i < matrix_get_rows(A); i++) {
+    for (int j = 0; j < matrix_get_columns(B); j++) {
       float sum = 0.0f;
-      for (int e = 0; e < A->columns; e++) {
-        sum += A->M[i * A->columns + e] * B->M[e * B->columns + j];
+      for (int e = 0; e < matrix_get_columns(A); e++) {
+        sum += A->M[matrix_get_array_idx(A, i, e)] * B->M[matrix_get_array_idx(B, e, j)];
       }
-      C->M[i * B->columns + j] = sum;
+      C->M[matrix_get_array_idx(C, i, j)] = sum;
     }
   }
+  return true;
 }
 
 static void matrix_add(struct matrix *A, struct matrix *B, struct matrix *C)
@@ -336,6 +350,7 @@ static int tests()
     struct matrix* A = allocate_matrix(rows, cols);
     struct matrix* B = allocate_matrix(rows, cols);
     struct matrix* C = allocate_matrix(rows, cols);
+    struct matrix* D = allocate_matrix(rows, rows);
 
     for (int i = 0; i < A->rows * A->columns; i++) {
         A->M[i] = 1.0f;
@@ -344,21 +359,29 @@ static int tests()
     for (int i = 0; i < B->rows * B->columns; i++) {
         B->M[i] = (float)i;
     }
+    
+    printf("\nA:\n");
     print_matrix(A);
+    printf("B:\n");
     print_matrix(B);
 
+    printf("signma(A):\n");
     matrix_sigma(A, C);
     print_matrix(C);
 
+    printf("A+B:\n");
     matrix_add(A, B, C);
     print_matrix(C);
 
 
+    printf("A * B:\n");
     print_matrix(A);
+    matrix_transpose(B);
     print_matrix(B);
-    //C_3x3 = B'_3x5 * A_5x3
-    matrix_multiplication(B, A, C);
-    print_matrix(C);
+    //D_5x5 = A_5x3 * B'_3x5
+    checkMatrixOp(matrix_multiplication(A, B, D));
+    print_matrix(D);
+    matrix_transpose(B);
 
     matrix_scaling(0.711f, A, C);
     print_matrix(C);
