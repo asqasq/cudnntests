@@ -312,17 +312,17 @@ int create_simple_network(char *trainimg, char *trainlb, char *tstimg, char *tst
 */
 
     struct matrix* weights1 = allocate_matrix(784, 50);
-    struct matrix* bias1 = allocate_matrix(50, 1);
+    struct matrix* bias1 = allocate_matrix(1, 50);
     struct matrix* weights2 = allocate_matrix(50, 10);
-    struct matrix* bias2 = allocate_matrix(10, 1);
+    struct matrix* bias2 = allocate_matrix(1, 10);
 
-    struct matrix* fc1out = allocate_matrix(50, 1);
-    struct matrix* fc1biasout = allocate_matrix(50, 1);
-    struct matrix* fc1activationout = allocate_matrix(50, 1);
+    struct matrix* fc1out = allocate_matrix(1, 50);
+    struct matrix* fc1biasout = allocate_matrix(1, 50);
+    struct matrix* fc1activationout = allocate_matrix(1, 50);
 
-    struct matrix* fc2out = allocate_matrix(10, 1);
-    struct matrix* fc2biasout = allocate_matrix(10, 1);
-    struct matrix* fc2activationout = allocate_matrix(10, 1);
+    struct matrix* fc2out = allocate_matrix(1, 10);
+    struct matrix* fc2biasout = allocate_matrix(1, 10);
+    struct matrix* fc2activationout = allocate_matrix(1, 10);
 
     int prediction = -1;
 
@@ -337,8 +337,10 @@ int create_simple_network(char *trainimg, char *trainlb, char *tstimg, char *tst
     matrix_random_init(bias2);
 
     struct matrix input_image;
-    input_image.rows = 28;
-    input_image.columns = 28;
+//    input_image.rows = 28;
+//    input_image.columns = 28;
+    input_image.rows = 1;
+    input_image.columns = 784;
     
     input_image.M = &(traindesc.databufferf[0]);
     forward_propagation(&input_image,
