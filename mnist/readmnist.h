@@ -12,6 +12,9 @@ struct mnist_img_desc {
 };
 
 int read_train_mnist(char *trainingdata, char *traininglabels, struct mnist_img_desc *desc);
+void free_mnist_desc(struct mnist_img_desc *desc);
+void dump_image(struct mnist_img_desc *desc, int idx);
+
 
 
 
