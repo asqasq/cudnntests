@@ -52,24 +52,43 @@ static void matrix_transpose(struct matrix *M)
     M->transposed = !M->transposed;
 }
 
+static inline int matrix_get_array_idx(struct matrix *M, int row, int column)
+{
+    if (!(M->transposed)) {
+        return (row * M->columns + column);
+    } else {
+        return (column * M->columns + row);
+    }
+}
+
+static inline int matrix_get_rows(struct matrix *M)
+{
+    if (!(M->transposed)) {
+        return (M->rows);
+    } else {
+        return (M->columns);
+    }
+}
+
+static inline int matrix_get_columns(struct matrix *M)
+{
+    if (!(M->transposed)) {
+        return (M->columns);
+    } else {
+        return (M->rows);
+    }
+}
+
+
 
 static void print_matrix(struct matrix *M)
 {
   printf("\n");
-  if (!M->transposed) {
-      for (int i = 0; i < M->rows; i++) {
-        for (int j = 0; j < M->columns; j++) {
-          printf("%f ", M->M[i * M->columns + j]);
-        }
-        printf("\n");
-      }
-  } else {
-      for (int j = 0; j < M->columns; j++) {
-        for (int i = 0; i < M->rows; i++) {
-          printf("%f ", M->M[i * M->columns + j]);
-        }
-        printf("\n");
-      }
+  for (int i = 0; i < matrix_get_rows(M); i++) {
+    for (int j = 0; j < matrix_get_columns(M); j++) {
+      printf("%f ", M->M[matrix_get_array_idx(M, i, j)]);
+    }
+    printf("\n");
   }
 }
 
