@@ -222,34 +222,63 @@ backwards:
 
 */
 
-static void backward_propagation(struct matrix *target /*y=label*/,
+static void backward_propagation(struct matrix *input,
                                 struct matrix *weight1, struct matrix *bias1,
                                 struct matrix *fc1out, struct matrix *fc1biasout,
                                 struct matrix *fc1activationout,
                                 struct matrix *weight2, struct matrix *bias2,
                                 struct matrix *fc2out, struct matrix *fc2biasout,
                                 struct matrix *fc2activationout,
-                                struct matrix *fc2delta, struct matrix *gdweight2)
+                                struct matrix *target /*y=label*/,
+                                struct matrix *fc2delta, struct matrix *gdweight2,
+                                struct matrix *fc1delta, struct matrix *gdweight1)
 {
+    //compute delta for output layer
     for (int i = 0; i < matrix_get_columns(fc2activationout); i++) {
-        fc2delta->M[matrix_get_array_idx(M, 0, i)] =
-            -(target->M[matrix_get_array_idx(M, 0, i)] - fc2activationout->M[matrix_get_array_idx(M, 0, i)])
-            * fc2activationout->M[matrix_get_array_idx(M, 0, i)]*(1 - fc2activationout->M[matrix_get_array_idx(M, 0, i)]);
+        fc2delta->M[matrix_get_array_idx(fc2delta, 0, i)] =
+            -(target->M[matrix_get_array_idx(fc2delta, 0, i)] - fc2activationout->M[matrix_get_array_idx(fc2delta, 0, i)])
+            * fc2activationout->M[matrix_get_array_idx(fc2delta, 0, i)]*(1 - fc2activationout->M[matrix_get_array_idx(fc2delta, 0, i)]);
     }
 
 
+    //compute gradient for weights 2
+    matrix_transpose(fc1activationout);
     checkMatrixOp(matrix_multiplication(fc1activationout,
                                         fc2delta,
                                         gdweight2));
+    matrix_transpose(fc1activationout);
 
 
-    for (int i = 0; i < matrix_get_columns(fc1activationout); i++) {
-        fc1delta->M[matrix_get_array_idx(M, 0, i)] =
-            -(target->M[matrix_get_array_idx(M, 0, i)] - fc2activationout->M[matrix_get_array_idx(M, 0, i)])
-            * fc2activationout->M[matrix_get_array_idx(M, 0, i)]*(1 - fc2activationout->M[matrix_get_array_idx(M, 0, i)]);
-    }
+    //compute delta for hidden layer fc1
+    matrix_transpose(weight2);
+    checkMatrixOp(matrix_multiplication(fc2delta,
+                                        weight2,
+                                        fc1delta));
+    matrix_transpose(weight2);
+
+
+    //compute gradient for weights 1
+    matrix_transpose(input);
+    checkMatrixOp(matrix_multiplication(input,
+                                        fc1delta,
+                                        gdweight1));
+    matrix_transpose(input);
 
 }
+
+
+static void update_weights(float learningrate,
+                                struct matrix *weight1,
+                                struct matrix *weight2,
+                                struct matrix *gdweight2,
+                                struct matrix *gdweight1)
+{
+    checkMatrixOp(matrix_scaling(-1.0f * learningrate, gdweight1, gdweight1));
+    checkMatrixOp(matrix_scaling(-1.0f * learningrate, gdweight2, gdweight2));
+    checkMatrixOp(matrix_add(weight1, gdweight1, weight1));
+    checkMatrixOp(matrix_add(weight2, gdweight2, weight2));
+}
+
 
 
 
@@ -328,6 +357,12 @@ int create_simple_network(char *trainimg, char *trainlb, char *tstimg, char *tst
     struct matrix* fc2biasout = allocate_matrix(1, 10);
     struct matrix* fc2activationout = allocate_matrix(1, 10);
 
+
+    struct matrix *fc2delta = allocate_matrix(1, 10);
+    struct matrix *gdweight2 = allocate_matrix(50, 10);
+    struct matrix *fc1delta = allocate_matrix(1, 50);
+    struct matrix *gdweight1 = allocate_matrix(784, 50);
+
     int prediction = -1;
 
 
@@ -339,6 +374,10 @@ int create_simple_network(char *trainimg, char *trainlb, char *tstimg, char *tst
 
     matrix_random_init(weights2);
     matrix_random_init(bias2);
+
+    checkMatrixOp(matrix_scaling(0.0, bias1, bias1));
+    checkMatrixOp(matrix_scaling(0.0, bias2, bias2));
+
 /*
     print_matrix(weights1);
     print_matrix(bias1);
@@ -350,8 +389,12 @@ int create_simple_network(char *trainimg, char *trainlb, char *tstimg, char *tst
 //    input_image.columns = 28;
     input_image.rows = 1;
     input_image.columns = 784;
+    struct matrix target_label;
+    target_label.rows = 1;
+    target_label.columns = 10;
     
-    input_image.M = &(traindesc.databufferf[0]);
+    for (int i = 0; i < 1000; i++) {
+    input_image.M = &(traindesc.databufferf[i]);
 
 //    dump_image(&traindesc, 0);
     forward_propagation(&input_image,
@@ -362,7 +405,26 @@ int create_simple_network(char *trainimg, char *trainlb, char *tstimg, char *tst
                         fc2out, fc2biasout,
                         fc2activationout);
 
+    target_label.M = &(traindesc.labelbufferf[i]);
 
+    backward_propagation(&input_image,
+                        weights1, bias1,
+                        fc1out, fc1biasout,
+                        fc1activationout,
+                        weights2, bias2,
+                        fc2out, fc2biasout,
+                        fc2activationout,
+                        &target_label /*y=label*/,
+                        fc2delta, gdweight2,
+                        fc1delta, gdweight1);
+
+    update_weights(0.1f,
+                   weights1,
+                   weights2,
+                   gdweight2,
+                   gdweight1);
+
+    }
     input_image.M = &(testdesc.databufferf[0]);
     prediction = predict(&input_image,
                          weights1, bias1,
