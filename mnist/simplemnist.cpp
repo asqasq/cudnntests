@@ -229,22 +229,26 @@ static void backward_propagation(struct matrix *target /*y=label*/,
                                 struct matrix *weight2, struct matrix *bias2,
                                 struct matrix *fc2out, struct matrix *fc2biasout,
                                 struct matrix *fc2activationout,
-                                struct matrix *fc2v, struct matrix *dweight2)
+                                struct matrix *fc2delta, struct matrix *gdweight2)
 {
-    fc2v->M[0] = -(target->M[0] - fc2activationout->M[0]) * fc2activationout->M[0]*(1 - fc2activationout->M[0]);
-    fc2v->M[1] = -(target->M[1] - fc2activationout->M[1]) * fc2activationout->M[1]*(1 - fc2activationout->M[1]);
-    fc2v->M[2] = -(target->M[2] - fc2activationout->M[2]) * fc2activationout->M[2]*(1 - fc2activationout->M[2]);
-    fc2v->M[3] = -(target->M[3] - fc2activationout->M[3]) * fc2activationout->M[3]*(1 - fc2activationout->M[3]);
-    fc2v->M[4] = -(target->M[4] - fc2activationout->M[4]) * fc2activationout->M[4]*(1 - fc2activationout->M[4]);
-    fc2v->M[5] = -(target->M[5] - fc2activationout->M[5]) * fc2activationout->M[5]*(1 - fc2activationout->M[5]);
-    fc2v->M[6] = -(target->M[6] - fc2activationout->M[6]) * fc2activationout->M[6]*(1 - fc2activationout->M[6]);
-    fc2v->M[7] = -(target->M[7] - fc2activationout->M[7]) * fc2activationout->M[7]*(1 - fc2activationout->M[7]);
-    fc2v->M[8] = -(target->M[8] - fc2activationout->M[8]) * fc2activationout->M[8]*(1 - fc2activationout->M[8]);
-    fc2v->M[9] = -(target->M[9] - fc2activationout->M[9]) * fc2activationout->M[9]*(1 - fc2activationout->M[9]);
+    for (int i = 0; i < matrix_get_columns(fc2activationout); i++) {
+        fc2delta->M[matrix_get_array_idx(M, 0, i)] =
+            -(target->M[matrix_get_array_idx(M, 0, i)] - fc2activationout->M[matrix_get_array_idx(M, 0, i)])
+            * fc2activationout->M[matrix_get_array_idx(M, 0, i)]*(1 - fc2activationout->M[matrix_get_array_idx(M, 0, i)]);
+    }
 
-    checkMatrixOp(matrix_multiplication(fc2v,
-                                        fc1activationout,
-                                        dweight2));
+
+    checkMatrixOp(matrix_multiplication(fc1activationout,
+                                        fc2delta,
+                                        gdweight2));
+
+
+    for (int i = 0; i < matrix_get_columns(fc1activationout); i++) {
+        fc1delta->M[matrix_get_array_idx(M, 0, i)] =
+            -(target->M[matrix_get_array_idx(M, 0, i)] - fc2activationout->M[matrix_get_array_idx(M, 0, i)])
+            * fc2activationout->M[matrix_get_array_idx(M, 0, i)]*(1 - fc2activationout->M[matrix_get_array_idx(M, 0, i)]);
+    }
+
 }
 
 
@@ -335,7 +339,12 @@ int create_simple_network(char *trainimg, char *trainlb, char *tstimg, char *tst
 
     matrix_random_init(weights2);
     matrix_random_init(bias2);
-
+/*
+    print_matrix(weights1);
+    print_matrix(bias1);
+    print_matrix(weights2);
+    print_matrix(bias2);
+*/
     struct matrix input_image;
 //    input_image.rows = 28;
 //    input_image.columns = 28;
@@ -343,6 +352,8 @@ int create_simple_network(char *trainimg, char *trainlb, char *tstimg, char *tst
     input_image.columns = 784;
     
     input_image.M = &(traindesc.databufferf[0]);
+
+//    dump_image(&traindesc, 0);
     forward_propagation(&input_image,
                         weights1, bias1,
                         fc1out, fc1biasout,
