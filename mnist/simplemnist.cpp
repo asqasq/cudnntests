@@ -374,7 +374,7 @@ static int predict(struct matrix *image,
 }
 
 
-int create_simple_network(char *trainimg, char *trainlb, char *tstimg, char *tstlb)
+int create_simple_network(char *trainimg, char *trainlb, char *tstimg, char *tstlb, int iterations)
 {
     int res;
 
@@ -456,41 +456,43 @@ int create_simple_network(char *trainimg, char *trainlb, char *tstimg, char *tst
     target_label.rows = 1;
     target_label.columns = 10;
     target_label.transposed = false;
-    
-    for (int i = 0; i < 60000; i++) {
-        if ((i % 1000) == 0) {
-            printf("%d/60000\n", i);
+
+    for (int ep = 0; ep < iterations; ep++){
+        for (int i = 0; i < 60000; i++) {
+            if ((i % 1000) == 0) {
+                printf("epoch %d: %d/60000\n", ep, i);
+            }
+            input_image.M = &(traindesc.databufferf[i]);
+
+            //dump_image(&traindesc, 0);
+            forward_propagation(&input_image,
+                                weights1, bias1,
+                                fc1out, fc1biasout,
+                                fc1activationout,
+                                weights2, bias2,
+                                fc2out, fc2biasout,
+                                fc2activationout);
+
+            target_label.M = &(traindesc.labelbufferf[i]);
+
+            backward_propagation(&input_image,
+                                weights1, bias1,
+                                fc1out, fc1biasout,
+                                fc1activationout,
+                                weights2, bias2,
+                                fc2out, fc2biasout,
+                                fc2activationout,
+                                &target_label /*y=label*/,
+                                fc2delta, gdweight2,
+                                fc1delta, gdweight1);
+
+            update_weights(0.1f,
+                           weights1,
+                           weights2,
+                           gdweight2,
+                           gdweight1);
+
         }
-        input_image.M = &(traindesc.databufferf[i]);
-
-        //dump_image(&traindesc, 0);
-        forward_propagation(&input_image,
-                            weights1, bias1,
-                            fc1out, fc1biasout,
-                            fc1activationout,
-                            weights2, bias2,
-                            fc2out, fc2biasout,
-                            fc2activationout);
-
-        target_label.M = &(traindesc.labelbufferf[i]);
-
-        backward_propagation(&input_image,
-                            weights1, bias1,
-                            fc1out, fc1biasout,
-                            fc1activationout,
-                            weights2, bias2,
-                            fc2out, fc2biasout,
-                            fc2activationout,
-                            &target_label /*y=label*/,
-                            fc2delta, gdweight2,
-                            fc1delta, gdweight1);
-
-        update_weights(0.1f,
-                       weights1,
-                       weights2,
-                       gdweight2,
-                       gdweight1);
-
     }
     dump_image(&testdesc, 0);
     input_image.M = &(testdesc.databufferf[0]);
@@ -578,33 +580,33 @@ static int create_test_network(int iterations)
 
     for (int i = 0; i < iterations; i++) {
 
-//    dump_image(&traindesc, 0);
-    forward_propagation(input_values,
-                        weights1, bias1,
-                        fc1out, fc1biasout,
-                        fc1activationout,
-                        weights2, bias2,
-                        fc2out, fc2biasout,
-                        fc2activationout);
+    //    dump_image(&traindesc, 0);
+        forward_propagation(input_values,
+                            weights1, bias1,
+                            fc1out, fc1biasout,
+                            fc1activationout,
+                            weights2, bias2,
+                            fc2out, fc2biasout,
+                            fc2activationout);
 
 
-    backward_propagation(input_values,
-                        weights1, bias1,
-                        fc1out, fc1biasout,
-                        fc1activationout,
-                        weights2, bias2,
-                        fc2out, fc2biasout,
-                        fc2activationout,
-                        output_labels /*y=label*/,
-                        fc2delta, gdweight2,
-                        fc1delta, gdweight1);
+        backward_propagation(input_values,
+                            weights1, bias1,
+                            fc1out, fc1biasout,
+                            fc1activationout,
+                            weights2, bias2,
+                            fc2out, fc2biasout,
+                            fc2activationout,
+                            output_labels /*y=label*/,
+                            fc2delta, gdweight2,
+                            fc1delta, gdweight1);
 
-    update_weights(0.5f,
-                   weights1,
-                   weights2,
-                   gdweight2,
-                   gdweight1);
-    printf("error = %f\n", compute_error(output_labels, fc2activationout));
+        update_weights(0.5f,
+                       weights1,
+                       weights2,
+                       gdweight2,
+                       gdweight1);
+        printf("error = %f\n", compute_error(output_labels, fc2activationout));
 
     }
     prediction = predict(input_values,
@@ -675,8 +677,8 @@ static int tests()
 
 int main(int argc, char **argv)
 {
-    if (argc == 5) {
-        create_simple_network(argv[1], argv[2], argv[3], argv[4]);
+    if (argc == 6) {
+        create_simple_network(argv[1], argv[2], argv[3], argv[4], atoi(argv[5]));
     } else if(argc == 2) {
         create_test_network(atoi(argv[1]));
     } else {
