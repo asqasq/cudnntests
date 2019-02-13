@@ -26,6 +26,7 @@
 #define checkMatrixOp(status) {         \
   if (!(status)) {                      \
     printf("\nMatrix operation failed: %s %s %d\n", __FILE__, __func__, __LINE__); \
+    exit(1); \
   } \
 };
 
@@ -87,7 +88,6 @@ static inline int matrix_get_columns(struct matrix *M)
 }
 
 
-
 static void print_matrix(struct matrix *M)
 {
   printf("\n");
@@ -99,6 +99,12 @@ static void print_matrix(struct matrix *M)
   }
 }
 
+static void print_matrixt(struct matrix *M, char *text)
+{
+    printf("%s\n", text);
+    print_matrix(M);
+}
+
 
 // Matrix mulitplication
 // C = A * B
@@ -107,6 +113,9 @@ static bool matrix_multiplication(struct matrix *A, struct matrix *B, struct mat
   if ((matrix_get_columns(A) != matrix_get_rows(B)) ||
       (matrix_get_rows(A) != matrix_get_rows(C)) ||
       (matrix_get_columns(B) != matrix_get_columns(C))) {
+        printf("A_%dx%d * B_%dx%d = C_%dx%d\n", matrix_get_rows(A), matrix_get_columns(A),
+                                                matrix_get_rows(B), matrix_get_columns(B),
+                                                matrix_get_rows(C), matrix_get_columns(C));
         return false;
   }
 
@@ -122,6 +131,23 @@ static bool matrix_multiplication(struct matrix *A, struct matrix *B, struct mat
   }
   return true;
 }
+
+
+static bool matrix_elementwise_multiplication(struct matrix *A, struct matrix *B, struct matrix *C)
+{
+    if ((matrix_get_rows(A) != matrix_get_rows(B)) ||
+        (matrix_get_rows(A) != matrix_get_rows(C)) ||
+        (matrix_get_columns(A) != matrix_get_columns(B)) ||
+        (matrix_get_columns(A) != matrix_get_columns(C))) {
+          return false;
+    }
+    // C = A .* B
+    for (int i = 0; i < (A->rows * A->columns); i++) {
+        C->M[i] = A->M[i] * B->M[i];
+    }
+    return true;
+}
+
 
 static bool matrix_add(struct matrix *A, struct matrix *B, struct matrix *C)
 {
@@ -170,7 +196,7 @@ static void matrix_random_init(struct matrix *A)
     int n = A->rows * A->columns;
 
     for (int i = 0; i < n; i++) {
-        A->M[i] = (float)random()/((float)RAND_MAX);
+        A->M[i] = (float)random()/((float)RAND_MAX) - 0.5f;
     }
 }
 
@@ -240,6 +266,8 @@ static void backward_propagation(struct matrix *input,
             * fc2activationout->M[matrix_get_array_idx(fc2delta, 0, i)]*(1 - fc2activationout->M[matrix_get_array_idx(fc2delta, 0, i)]);
     }
 
+//    print_matrixt(fc2delta, "fc2delta");
+
 
     //compute gradient for weights 2
     matrix_transpose(fc1activationout);
@@ -247,6 +275,8 @@ static void backward_propagation(struct matrix *input,
                                         fc2delta,
                                         gdweight2));
     matrix_transpose(fc1activationout);
+//    print_matrixt(gdweight2, "gdweight2");
+
 
 
     //compute delta for hidden layer fc1
@@ -254,7 +284,16 @@ static void backward_propagation(struct matrix *input,
     checkMatrixOp(matrix_multiplication(fc2delta,
                                         weight2,
                                         fc1delta));
+
+    // multiply element-wise with derivate of activation function of this layer:
+    // fc1delta .* out_h * (1 - out_h)
+    for (int i = 0; i < (fc1delta->rows * fc1delta->columns); i++) {
+        fc1delta->M[i] = fc1delta->M[i] * fc1activationout->M[i] * (1 - fc1activationout->M[i]);
+    }
+
     matrix_transpose(weight2);
+//    print_matrixt(fc1delta, "fc1delta");
+
 
 
     //compute gradient for weights 1
@@ -263,6 +302,7 @@ static void backward_propagation(struct matrix *input,
                                         fc1delta,
                                         gdweight1));
     matrix_transpose(input);
+//    print_matrixt(gdweight1, "gdweight1");
 
 }
 
@@ -277,8 +317,25 @@ static void update_weights(float learningrate,
     checkMatrixOp(matrix_scaling(-1.0f * learningrate, gdweight2, gdweight2));
     checkMatrixOp(matrix_add(weight1, gdweight1, weight1));
     checkMatrixOp(matrix_add(weight2, gdweight2, weight2));
+
+//    print_matrixt(weight1, "weight1 updated");
+//    print_matrixt(weight2, "weight2 updated");
 }
 
+static float compute_error(struct matrix *target /*y=label*/,
+                           struct matrix *fc2activationout)
+{
+    int n = matrix_get_columns(fc2activationout);
+    if (n == 1) {
+        n = matrix_get_rows(fc2activationout);
+    }
+
+    float err = 0.0f;
+    for (int i = 0; i < n; i++) {
+        err += 0.5* ((target->M[i] - fc2activationout->M[i]) * (target->M[i] - fc2activationout->M[i]));
+    }
+    return err;
+}
 
 
 
@@ -301,7 +358,12 @@ static int predict(struct matrix *image,
                         fc2out, fc2biasout,
                         fc2activationout);
 
-    for (int i = 0; i < 10; i++) {
+    int n = matrix_get_columns(fc2activationout);
+    if (n == 1) {
+        n = matrix_get_rows(fc2activationout);
+    }
+
+    for (int i = 0; i < n; i++) {
         printf("output activation %d: %f\n", i, fc2activationout->M[i]);
         if (fc2activationout->M[i] > current_value) {
             pred = i;
@@ -389,42 +451,48 @@ int create_simple_network(char *trainimg, char *trainlb, char *tstimg, char *tst
 //    input_image.columns = 28;
     input_image.rows = 1;
     input_image.columns = 784;
+    input_image.transposed = false;
     struct matrix target_label;
     target_label.rows = 1;
     target_label.columns = 10;
+    target_label.transposed = false;
     
-    for (int i = 0; i < 1000; i++) {
-    input_image.M = &(traindesc.databufferf[i]);
+    for (int i = 0; i < 60000; i++) {
+        if ((i % 1000) == 0) {
+            printf("%d/60000\n", i);
+        }
+        input_image.M = &(traindesc.databufferf[i]);
 
-//    dump_image(&traindesc, 0);
-    forward_propagation(&input_image,
-                        weights1, bias1,
-                        fc1out, fc1biasout,
-                        fc1activationout,
-                        weights2, bias2,
-                        fc2out, fc2biasout,
-                        fc2activationout);
+        //dump_image(&traindesc, 0);
+        forward_propagation(&input_image,
+                            weights1, bias1,
+                            fc1out, fc1biasout,
+                            fc1activationout,
+                            weights2, bias2,
+                            fc2out, fc2biasout,
+                            fc2activationout);
 
-    target_label.M = &(traindesc.labelbufferf[i]);
+        target_label.M = &(traindesc.labelbufferf[i]);
 
-    backward_propagation(&input_image,
-                        weights1, bias1,
-                        fc1out, fc1biasout,
-                        fc1activationout,
-                        weights2, bias2,
-                        fc2out, fc2biasout,
-                        fc2activationout,
-                        &target_label /*y=label*/,
-                        fc2delta, gdweight2,
-                        fc1delta, gdweight1);
+        backward_propagation(&input_image,
+                            weights1, bias1,
+                            fc1out, fc1biasout,
+                            fc1activationout,
+                            weights2, bias2,
+                            fc2out, fc2biasout,
+                            fc2activationout,
+                            &target_label /*y=label*/,
+                            fc2delta, gdweight2,
+                            fc1delta, gdweight1);
 
-    update_weights(0.1f,
-                   weights1,
-                   weights2,
-                   gdweight2,
-                   gdweight1);
+        update_weights(0.1f,
+                       weights1,
+                       weights2,
+                       gdweight2,
+                       gdweight1);
 
     }
+    dump_image(&testdesc, 0);
     input_image.M = &(testdesc.databufferf[0]);
     prediction = predict(&input_image,
                          weights1, bias1,
@@ -467,19 +535,19 @@ static int create_test_network(int iterations)
     [ w1 w3 ]
     [ w2 w4 ]
 */
-    weights1->M[0] = 0.15f;
-    weights1->M[1] = 0.20f;
-    weights1->M[2] = 0.25f;
-    weights1->M[3] = 0.30f;
+    weights1->M[0] = 0.15f; //w1
+    weights1->M[1] = 0.25f; //w3
+    weights1->M[2] = 0.20f; //w2
+    weights1->M[3] = 0.30f; //w4
 
 /*
     [ w5 w7 ]
     [ w6 w8 ]
 */
-    weights2->M[0] = 0.40f;
-    weights2->M[1] = 0.45f;
-    weights2->M[2] = 0.50f;
-    weights2->M[3] = 0.55f;
+    weights2->M[0] = 0.40f; //w5
+    weights2->M[1] = 0.50f; //w7
+    weights2->M[2] = 0.45f; //w6
+    weights2->M[3] = 0.55f; //w8
 
 /*
     [ b1 b2 ]
@@ -531,11 +599,12 @@ static int create_test_network(int iterations)
                         fc2delta, gdweight2,
                         fc1delta, gdweight1);
 
-    update_weights(0.1f,
+    update_weights(0.5f,
                    weights1,
                    weights2,
                    gdweight2,
                    gdweight1);
+    printf("error = %f\n", compute_error(output_labels, fc2activationout));
 
     }
     prediction = predict(input_values,
