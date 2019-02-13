@@ -438,6 +438,118 @@ int create_simple_network(char *trainimg, char *trainlb, char *tstimg, char *tst
     return 0;
 }
 
+static int create_test_network(int iterations)
+{
+    int res;
+
+    struct matrix* weights1 = allocate_matrix(2, 2);
+    struct matrix* bias1 = allocate_matrix(1, 2);
+    struct matrix* weights2 = allocate_matrix(2, 2);
+    struct matrix* bias2 = allocate_matrix(1, 2);
+
+    struct matrix* fc1out = allocate_matrix(1, 2);
+    struct matrix* fc1biasout = allocate_matrix(1, 2);
+    struct matrix* fc1activationout = allocate_matrix(1, 2);
+
+    struct matrix* fc2out = allocate_matrix(1, 2);
+    struct matrix* fc2biasout = allocate_matrix(1, 2);
+    struct matrix* fc2activationout = allocate_matrix(1, 2);
+
+
+    struct matrix *fc2delta = allocate_matrix(1, 2);
+    struct matrix *gdweight2 = allocate_matrix(2, 2);
+    struct matrix *fc1delta = allocate_matrix(1, 2);
+    struct matrix *gdweight1 = allocate_matrix(2, 2);
+
+    int prediction = -1;
+
+/*
+    [ w1 w3 ]
+    [ w2 w4 ]
+*/
+    weights1->M[0] = 0.15f;
+    weights1->M[1] = 0.20f;
+    weights1->M[2] = 0.25f;
+    weights1->M[3] = 0.30f;
+
+/*
+    [ w5 w7 ]
+    [ w6 w8 ]
+*/
+    weights2->M[0] = 0.40f;
+    weights2->M[1] = 0.45f;
+    weights2->M[2] = 0.50f;
+    weights2->M[3] = 0.55f;
+
+/*
+    [ b1 b2 ]
+*/
+    bias1->M[0] = 0.35f;
+    bias1->M[1] = 0.35f;
+
+/*
+    [ b3 b4 ]
+*/
+    bias2->M[0] = 0.60f;
+    bias2->M[1] = 0.60f;
+
+/*
+    print_matrix(weights1);
+    print_matrix(bias1);
+    print_matrix(weights2);
+    print_matrix(bias2);
+*/
+    struct matrix *input_values = allocate_matrix(1, 2);
+    struct matrix *output_labels = allocate_matrix(1, 2);
+
+    input_values->M[0] = 0.05f;
+    input_values->M[1] = 0.10f;
+
+    output_labels->M[0] = 0.01f;
+    output_labels->M[1] = 0.99f;
+
+    for (int i = 0; i < iterations; i++) {
+
+//    dump_image(&traindesc, 0);
+    forward_propagation(input_values,
+                        weights1, bias1,
+                        fc1out, fc1biasout,
+                        fc1activationout,
+                        weights2, bias2,
+                        fc2out, fc2biasout,
+                        fc2activationout);
+
+
+    backward_propagation(input_values,
+                        weights1, bias1,
+                        fc1out, fc1biasout,
+                        fc1activationout,
+                        weights2, bias2,
+                        fc2out, fc2biasout,
+                        fc2activationout,
+                        output_labels /*y=label*/,
+                        fc2delta, gdweight2,
+                        fc1delta, gdweight1);
+
+    update_weights(0.1f,
+                   weights1,
+                   weights2,
+                   gdweight2,
+                   gdweight1);
+
+    }
+    prediction = predict(input_values,
+                         weights1, bias1,
+                         fc1out, fc1biasout,
+                         fc1activationout,
+                         weights2, bias2,
+                         fc2out, fc2biasout,
+                         fc2activationout);
+
+    printf("\nPredicted number: %d\n", prediction);
+    return 0;
+}
+
 static int tests()
 {
     const int rows = 5;
@@ -496,6 +608,8 @@ int main(int argc, char **argv)
 {
     if (argc == 5) {
         create_simple_network(argv[1], argv[2], argv[3], argv[4]);
+    } else if(argc == 2) {
+        create_test_network(atoi(argv[1]));
     } else {
         tests();
     }
